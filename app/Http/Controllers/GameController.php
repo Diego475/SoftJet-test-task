@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GameRequest;
 use App\Models\Game;
-use Illuminate\Support\Facades\DB;
 
 class GameController extends Controller
 {
@@ -20,9 +19,7 @@ class GameController extends Controller
     */
     public function index()
     {
-        $games = Game::all();
-        
-        return $games;
+        return Game::with('genres')->get();
     }
 
     /**
@@ -66,9 +63,7 @@ class GameController extends Controller
     {
         $request->validated();
         $game = Game::create(["name" => $request->name, "description" => $request->description]);
-
-        foreach ($request->genres as $id) DB::table('games_genres')->insert(["game_id" => $game->id, "genre_id" => $id]);
-
+        $game->genres()->attach($request->genres);
         return response()->json(["success" => true]);
     }
 
@@ -117,11 +112,10 @@ class GameController extends Controller
     public function update(GameRequest $request, $id)
     {
         $request->validated();
-        Game::where('id', $id)->update(["name" => $request->name, "description" => $request->description]);
-        DB::table('games_genres')->where('game_id', $id)->delete();
-
-        foreach ($request->genres as $id)  DB::table('games_genres')->insert(["game_id" => $id, "genre_id" => $id]);
-
+        $game = Game::find($id);
+        $game->update(["name" => $request->name, "description" => $request->description]);
+        $game->genres()->detach();
+        $game->genres()->attach($request->genres);
         return response()->json(["success" => true]);
     }
 
@@ -142,8 +136,7 @@ class GameController extends Controller
     */
     public function show($id)
     {
-        $game = Game::where('id', $id)->first();
-        return $game;
+        return Game::where('id', $id)->with('genres')->first();
     }
 
     /**
@@ -169,8 +162,9 @@ class GameController extends Controller
     */
     public function delete($id)
     {
-        Game::where('id', $id)->delete();
-        DB::table('games_genres')->where('game_id', $id)->delete();
+        $game = Game::find($id);
+        $game->genres()->detach();
+        $game->delete();
         return response()->json(["success" => true]);
     }
 }

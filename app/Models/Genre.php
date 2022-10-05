@@ -11,4 +11,11 @@ class Genre extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = ['name'];
+
+    protected $hidden = ['pivot'];
+
+    public function games()
+    {
+        return $this->belongsToMany(Game::class, 'games_genres');
+    }
 }

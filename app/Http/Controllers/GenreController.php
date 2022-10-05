@@ -116,7 +116,7 @@ class GenreController extends Controller
     */
     public function show($id)
     {
-        return Genre::where('id', $id)->first();
+        return Genre::find($id);
     }
 
     /**
@@ -142,7 +142,9 @@ class GenreController extends Controller
     */
     public function delete($id)
     {
-        Genre::where('id', $id)->delete();
+        $genre = Genre::find($id);
+        $genre->games()->detach();
+        $genre->delete();
         return response()->json(["success" => true]);
     }
 }
